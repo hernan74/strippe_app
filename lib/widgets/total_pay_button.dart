@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:stripe_app/bloc/pagar/pagar_bloc.dart';
 
 class TotalPayButton extends StatelessWidget {
   @override
@@ -31,7 +33,13 @@ class TotalPayButton extends StatelessWidget {
               Text('255.55 USD', style: TextStyle(fontSize: 20)),
             ],
           ),
-          _BtnPay()
+          BlocBuilder<PagarBloc, PagarState>(
+            builder: (context, state) {
+              return _BtnPay(
+                tarjetaActiva: state.tarjetaActiva,
+              );
+            },
+          )
         ],
       ),
     );
@@ -39,9 +47,14 @@ class TotalPayButton extends StatelessWidget {
 }
 
 class _BtnPay extends StatelessWidget {
+  final bool tarjetaActiva;
+
+  const _BtnPay({this.tarjetaActiva});
   @override
   Widget build(BuildContext context) {
-    return true ? buildBotonTarjeta(context) : buildAppleAndGooglePay(context);
+    return tarjetaActiva
+        ? buildBotonTarjeta(context)
+        : buildAppleAndGooglePay(context);
   }
 
   Widget buildBotonTarjeta(BuildContext context) {
