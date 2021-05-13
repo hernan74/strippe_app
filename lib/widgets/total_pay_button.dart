@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:stripe_app/bloc/pagar/pagar_bloc.dart';
+import 'package:stripe_app/helpers/helpers.dart';
+import 'package:stripe_app/services/stripe_service.dart';
+import 'package:stripe_payment/stripe_payment.dart';
 
 class TotalPayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final pagarBloc = context.read<PagarBloc>();
     return Container(
       width: width,
       height: 100,
@@ -30,7 +34,8 @@ class TotalPayButton extends StatelessWidget {
                 'Total',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              Text('255.55 USD', style: TextStyle(fontSize: 20)),
+              Text('${pagarBloc.state.montoPagar} ${pagarBloc.state.moneda} ',
+                  style: TextStyle(fontSize: 20)),
             ],
           ),
           BlocBuilder<PagarBloc, PagarState>(
@@ -76,7 +81,25 @@ class _BtnPay extends StatelessWidget {
           )
         ],
       ),
-      onPressed: () {},
+      onPressed: () async {
+        mostrarLoading(context);
+        final pagarBloc = context.read<PagarBloc>().state;
+        final stripeService = new StripeService();
+        final creditCard = new CreditCard(
+            number: pagarBloc.tarjeta.cardNumber,
+            expMonth: int.parse(pagarBloc.tarjeta.expiracyDate.split('/')[0]),
+            expYear: int.parse(pagarBloc.tarjeta.expiracyDate.split('/')[1]));
+        final resp = await stripeService.pagarConTarjetaExistente(
+            amount: pagarBloc.montoPagarString,
+            currency: pagarBloc.moneda,
+            card: creditCard);
+        Navigator.pop(context);
+        if (resp.ok) {
+          mostrarAlerta(context, 'Tarjeta OK', 'Todo correcto');
+        } else {
+          mostrarAlerta(context, 'Algo salio mal', resp.msj);
+        }
+      },
     );
   }
 
@@ -101,7 +124,13 @@ class _BtnPay extends StatelessWidget {
           )
         ],
       ),
-      onPressed: () {},
+      onPressed: () async {
+        final stripeService = new StripeService();
+        final pagarBloc = context.read<PagarBloc>().state;
+        final resp = stripeService.pagarApplePayAndGooglePay(
+            amount: pagarBloc.montoPagarString, currency: pagarBloc.moneda);
+            
+      },
     );
   }
 }
